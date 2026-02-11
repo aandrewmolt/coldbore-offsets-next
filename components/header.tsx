@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAppStore } from '@/lib/store';
 import { formatFileSize } from '@/lib/utils';
-import { Camera, HelpCircle } from 'lucide-react';
+import Image from 'next/image';
+import { HelpCircle } from 'lucide-react';
 import { SaveStatus } from '@/components/save-status';
 
 interface HeaderProps {
@@ -27,10 +28,16 @@ export function Header({ onOpenInstructions }: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="container mx-auto flex h-14 items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <Camera className="h-6 w-6 text-primary" />
-          <h1 className="text-lg font-bold text-primary">ShearFRAC</h1>
-        </div>
+        <h1 className="flex items-center min-w-0">
+          <Image
+            src="/shearfrac-logo.webp"
+            alt="ShearFRAC"
+            width={140}
+            height={32}
+            className="h-7 w-auto shrink-0"
+            priority
+          />
+        </h1>
 
         <div className="hidden items-center gap-2 sm:flex">
           <Badge variant="secondary">
