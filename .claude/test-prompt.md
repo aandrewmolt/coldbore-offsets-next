@@ -1,6 +1,6 @@
 # ShearFRAC Round 3 — Ralph Loop Test Prompt
 
-## Project: `/home/molt/projects/coldbore-offsets-next/`
+## Project: `/home/molt/projects/shearfrac-photos/`
 
 ## Overview
 Implement 6 improvements in priority order. Each iteration should pick up the next unfinished improvement, implement it, and verify it passes `npx tsc --noEmit && npm run build && npx playwright test`.
