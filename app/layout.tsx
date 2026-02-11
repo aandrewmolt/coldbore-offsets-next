@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ErrorBoundary } from "@/components/error-boundary";
+import { ServiceWorkerRegister } from "@/components/sw-register";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,6 +14,13 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#D4A017",
+};
 
 export const metadata: Metadata = {
   title: "ShearFRAC - Photos",
@@ -30,6 +38,16 @@ export const metadata: Metadata = {
     ],
     apple: "/apple-touch-icon.png",
   },
+  openGraph: {
+    title: "ShearFRAC - Field Photo Organizer",
+    description: "Professional photo management for oil and gas field operations",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: "ShearFRAC - Field Photo Organizer",
+    description: "Professional photo management for oil and gas field operations",
+  },
   other: {
     "mobile-web-app-capable": "yes",
   },
@@ -42,10 +60,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <head>
-        <meta name="theme-color" content="#D4A017" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
@@ -53,6 +67,7 @@ export default function RootLayout({
         <ErrorBoundary>
           {children}
         </ErrorBoundary>
+        <ServiceWorkerRegister />
         <Toaster position="bottom-right" richColors />
       </body>
     </html>

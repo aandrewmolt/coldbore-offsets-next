@@ -145,7 +145,13 @@ export function ProjectSelectModal({ open, onOpenChange }: ProjectSelectModalPro
                 {projects.map((project) => (
                   <Card key={project.id} className="cursor-pointer transition-colors hover:bg-muted/50">
                     <CardContent className="flex items-center justify-between p-3">
-                      <div className="min-w-0 flex-1" onClick={() => handleLoadProject(project.id)}>
+                      <div
+                        className="min-w-0 flex-1"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => handleLoadProject(project.id)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleLoadProject(project.id); } }}
+                      >
                         <p className="truncate font-medium">{project.name || 'Unnamed Project'}</p>
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
                           {project.client && (
@@ -169,12 +175,13 @@ export function ProjectSelectModal({ open, onOpenChange }: ProjectSelectModalPro
                         variant="ghost"
                         size="sm"
                         className="ml-2 text-destructive hover:text-destructive"
+                        aria-label={`Delete project ${project.name || 'Unnamed'}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           setDeleteTarget(project.id);
                         }}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
                       </Button>
                     </CardContent>
                   </Card>

@@ -9,6 +9,7 @@ export default function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4">
       <div className="mb-12 text-center">
+        <h1 className="sr-only">ShearFRAC - Field Photo Organizer</h1>
         <Image
           src="/shearfrac-logo.webp"
           alt="ShearFRAC"

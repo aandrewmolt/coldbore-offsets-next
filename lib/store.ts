@@ -31,6 +31,7 @@ interface AppStore {
   lastSaveTime: Date | null;
   unsavedChanges: boolean;
   saveStatus: 'idle' | 'saved' | 'failed';
+  dirtyPhotoIds: Set<string>;
 
   // Image viewer
   viewerPhotoId: string | null;
@@ -73,6 +74,7 @@ interface AppStore {
 
   markSaved: () => void;
   markSaveFailed: () => void;
+  clearDirtyPhotos: () => void;
 
   reset: () => void;
 
@@ -119,16 +121,22 @@ export const useAppStore = create<AppStore>((set, get) => ({
   lastSaveTime: null,
   unsavedChanges: false,
   saveStatus: 'idle',
+  dirtyPhotoIds: new Set<string>(),
   viewerPhotoId: null,
   techName: '',
 
-  addPhoto: (photo) => set((state) => ({
-    photos: [...state.photos, { ...photo, sortOrder: photo.sortOrder ?? state.photos.length }],
-    photoCounter: state.photoCounter + 1,
-    totalOriginalSize: state.totalOriginalSize + (photo.originalSize || 0),
-    totalOptimizedSize: state.totalOptimizedSize + (photo.size || 0),
-    unsavedChanges: true,
-  })),
+  addPhoto: (photo) => set((state) => {
+    const dirty = new Set(state.dirtyPhotoIds);
+    dirty.add(photo.id);
+    return {
+      photos: [...state.photos, { ...photo, sortOrder: photo.sortOrder ?? state.photos.length }],
+      photoCounter: state.photoCounter + 1,
+      totalOriginalSize: state.totalOriginalSize + (photo.originalSize || 0),
+      totalOptimizedSize: state.totalOptimizedSize + (photo.size || 0),
+      unsavedChanges: true,
+      dirtyPhotoIds: dirty,
+    };
+  }),
 
   removePhoto: (photoId) => set((state) => {
     const photo = state.photos.find((p) => p.id === photoId);
@@ -143,10 +151,15 @@ export const useAppStore = create<AppStore>((set, get) => ({
     };
   }),
 
-  updatePhoto: (photoId, updates) => set((state) => ({
-    photos: state.photos.map((p) => (p.id === photoId ? { ...p, ...updates } : p)),
-    unsavedChanges: true,
-  })),
+  updatePhoto: (photoId, updates) => set((state) => {
+    const dirty = state.dirtyPhotoIds;
+    const hasImageChange = 'dataUrl' in updates || 'jpegUrl' in updates;
+    return {
+      photos: state.photos.map((p) => (p.id === photoId ? { ...p, ...updates } : p)),
+      unsavedChanges: true,
+      dirtyPhotoIds: hasImageChange ? new Set([...dirty, photoId]) : dirty,
+    };
+  }),
 
   getPhotoById: (photoId) => get().photos.find((p) => p.id === photoId),
 
@@ -254,6 +267,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   markSaved: () => set({ lastSaveTime: new Date(), unsavedChanges: false, saveStatus: 'saved' }),
   markSaveFailed: () => set({ saveStatus: 'failed' }),
+  clearDirtyPhotos: () => set({ dirtyPhotoIds: new Set<string>() }),
 
   hasDuplicate: (name, size) => {
     return get().photos.some((p) => p.originalName === name && p.originalSize === size);
@@ -289,6 +303,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     lastSaveTime: null,
     unsavedChanges: false,
     saveStatus: 'idle',
+    dirtyPhotoIds: new Set<string>(),
     viewerPhotoId: null,
     techName: '',
   }),

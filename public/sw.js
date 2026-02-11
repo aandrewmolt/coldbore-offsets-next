@@ -1,10 +1,13 @@
-const CACHE_NAME = 'shearfrac-v1';
+const CACHE_NAME = 'shearfrac-v2';
 const STATIC_ASSETS = [
   '/',
+  '/offsets/',
+  '/rigup/',
   '/manifest.json',
   '/favicon.svg',
   '/icon-192.png',
   '/icon-512.png',
+  '/apple-touch-icon.png',
 ];
 
 // Install: pre-cache static assets

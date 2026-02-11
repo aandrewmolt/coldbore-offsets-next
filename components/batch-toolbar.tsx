@@ -53,8 +53,8 @@ export function BatchToolbar() {
 
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur animate-in slide-in-from-bottom-2">
-        <div className="container mx-auto flex items-center justify-between px-4 py-3">
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur animate-in slide-in-from-bottom-2 pb-[env(safe-area-inset-bottom)]">
+        <div className="container mx-auto flex flex-wrap items-center justify-between gap-2 px-4 py-3">
           <div className="flex items-center gap-3">
             <Badge className="bg-primary text-primary-foreground">{count} selected</Badge>
           </div>
@@ -76,8 +76,8 @@ export function BatchToolbar() {
               <Trash2 className="mr-1.5 h-3.5 w-3.5" />
               Delete
             </Button>
-            <Button variant="ghost" size="sm" onClick={clearSelection}>
-              <X className="h-3.5 w-3.5" />
+            <Button variant="ghost" size="sm" onClick={clearSelection} aria-label="Clear selection">
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
             </Button>
           </div>
         </div>

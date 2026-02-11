@@ -75,6 +75,7 @@ export function PhotoSidebar() {
         <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           id="search-input"
+          aria-label="Search photos"
           placeholder="Search photos..."
           value={currentFilter.search}
           onChange={(e) => setFilter('search', e.target.value)}
@@ -84,14 +85,14 @@ export function PhotoSidebar() {
 
       {/* Well filter */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground">Well</label>
+        <label htmlFor="filter-well" className="text-xs font-medium text-muted-foreground">Well</label>
         <Select
           value={currentFilter.well || '__all__'}
           onValueChange={(value) =>
             setFilter('well', value === '__all__' ? '' : value)
           }
         >
-          <SelectTrigger size="sm" className="w-full">
+          <SelectTrigger id="filter-well" size="sm" className="w-full">
             <SelectValue placeholder="All Wells" />
           </SelectTrigger>
           <SelectContent>
@@ -107,7 +108,7 @@ export function PhotoSidebar() {
 
       {/* Category filter */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground">
+        <label htmlFor="filter-category" className="text-xs font-medium text-muted-foreground">
           Category
         </label>
         <Select
@@ -116,7 +117,7 @@ export function PhotoSidebar() {
             setFilter('category', value === '__all__' ? '' : value)
           }
         >
-          <SelectTrigger size="sm" className="w-full">
+          <SelectTrigger id="filter-category" size="sm" className="w-full">
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
@@ -134,11 +135,11 @@ export function PhotoSidebar() {
 
       {/* Sort by */}
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-muted-foreground">
+        <label htmlFor="filter-sort" className="text-xs font-medium text-muted-foreground">
           Sort by
         </label>
         <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger size="sm" className="w-full">
+          <SelectTrigger id="filter-sort" size="sm" className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

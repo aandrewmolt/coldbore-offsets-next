@@ -248,7 +248,7 @@ export function ImageViewer() {
   const categoryLabel = categoryDef?.label || photo.category || 'Unassigned';
 
   return (
-    <div className="image-viewer-overlay flex flex-col">
+    <div className="image-viewer-overlay flex flex-col" role="dialog" aria-modal="true" aria-label={`Image viewer: ${photo.name}`}>
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-2 bg-black/60">
         <div className="flex items-center gap-3 min-w-0">
@@ -265,11 +265,11 @@ export function ImageViewer() {
             size="icon"
             className="text-white/80 hover:text-white hover:bg-white/10"
             onClick={zoomOut}
-            title="Zoom out (-)"
+            aria-label="Zoom out"
           >
-            <ZoomOut className="h-4 w-4" />
+            <ZoomOut className="h-4 w-4" aria-hidden="true" />
           </Button>
-          <span className="text-white/70 text-xs w-12 text-center">
+          <span className="text-white/70 text-xs w-12 text-center" aria-live="polite">
             {Math.round(zoom * 100)}%
           </span>
           <Button
@@ -277,25 +277,25 @@ export function ImageViewer() {
             size="icon"
             className="text-white/80 hover:text-white hover:bg-white/10"
             onClick={zoomIn}
-            title="Zoom in (+)"
+            aria-label="Zoom in"
           >
-            <ZoomIn className="h-4 w-4" />
+            <ZoomIn className="h-4 w-4" aria-hidden="true" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             className="text-white/80 hover:text-white hover:bg-white/10"
             onClick={rotate}
-            title="Rotate (R)"
+            aria-label="Rotate image"
           >
-            <RotateCw className="h-4 w-4" />
+            <RotateCw className="h-4 w-4" aria-hidden="true" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             className="text-white/80 hover:text-white hover:bg-white/10 text-xs"
             onClick={resetTransform}
-            title="Reset (0)"
+            aria-label="Reset zoom and rotation"
           >
             Reset
           </Button>
@@ -304,9 +304,9 @@ export function ImageViewer() {
             size="icon"
             className="text-white/80 hover:text-white hover:bg-white/10"
             onClick={() => setEditMode(true)}
-            title="Edit photo"
+            aria-label="Edit photo"
           >
-            <Crop className="h-4 w-4" />
+            <Crop className="h-4 w-4" aria-hidden="true" />
           </Button>
           <div className="w-px h-5 bg-white/20 mx-1" />
           <Button
@@ -314,9 +314,9 @@ export function ImageViewer() {
             size="icon"
             className="text-white/80 hover:text-white hover:bg-white/10"
             onClick={close}
-            title="Close (Esc)"
+            aria-label="Close image viewer"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </Button>
         </div>
       </div>
@@ -348,9 +348,9 @@ export function ImageViewer() {
               e.stopPropagation();
               navigatePrev();
             }}
-            title="Previous (Left Arrow)"
+            aria-label="Previous photo"
           >
-            <ChevronLeft className="h-8 w-8" />
+            <ChevronLeft className="h-8 w-8" aria-hidden="true" />
           </Button>
         )}
 
@@ -376,9 +376,9 @@ export function ImageViewer() {
               e.stopPropagation();
               navigateNext();
             }}
-            title="Next (Right Arrow)"
+            aria-label="Next photo"
           >
-            <ChevronRight className="h-8 w-8" />
+            <ChevronRight className="h-8 w-8" aria-hidden="true" />
           </Button>
         )}
       </div>

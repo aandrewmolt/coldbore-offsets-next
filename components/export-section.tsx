@@ -18,7 +18,6 @@ interface ExportSectionProps {
 }
 
 export function ExportSection({ onOpenProjectModal }: ExportSectionProps) {
-  const store = useAppStore();
   const photos = useAppStore((s) => s.photos);
   const wells = useAppStore((s) => s.wells);
   const techName = useAppStore((s) => s.techName);
@@ -71,7 +70,7 @@ export function ExportSection({ onOpenProjectModal }: ExportSectionProps) {
 
   async function handleSave() {
     try {
-      const success = await saveToLocalStorage(store, storagePrefix);
+      const success = await saveToLocalStorage(useAppStore.getState(), storagePrefix);
       if (success) {
         markSaved();
         toast.success('Project saved');

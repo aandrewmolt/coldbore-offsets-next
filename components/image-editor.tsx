@@ -116,8 +116,56 @@ export function ImageEditor({ photo, onClose }: ImageEditorProps) {
   const handleCanvasMouseUp = useCallback(() => {
     if (!cropping) return;
     setCropStart(null);
-    // cropRect is already set
   }, [cropping]);
+
+  // Touch handlers for mobile crop
+  const getCanvasPoint = useCallback((touch: React.Touch) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return null;
+    return {
+      x: Math.min(Math.max(touch.clientX - rect.left, 0), rect.width),
+      y: Math.min(Math.max(touch.clientY - rect.top, 0), rect.height),
+    };
+  }, []);
+
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent<HTMLCanvasElement>) => {
+      if (!cropping || e.touches.length !== 1) return;
+      e.preventDefault();
+      const pt = getCanvasPoint(e.touches[0]);
+      if (!pt) return;
+      setCropStart(pt);
+      setCropEnd(pt);
+      setCropRect(null);
+    },
+    [cropping, getCanvasPoint]
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent<HTMLCanvasElement>) => {
+      if (!cropping || !cropStart || e.touches.length !== 1) return;
+      e.preventDefault();
+      const pt = getCanvasPoint(e.touches[0]);
+      if (!pt) return;
+      setCropEnd(pt);
+      setCropRect({
+        x: Math.min(cropStart.x, pt.x),
+        y: Math.min(cropStart.y, pt.y),
+        w: Math.abs(pt.x - cropStart.x),
+        h: Math.abs(pt.y - cropStart.y),
+      });
+    },
+    [cropping, cropStart, getCanvasPoint]
+  );
+
+  const handleTouchEnd = useCallback(
+    (e: React.TouchEvent<HTMLCanvasElement>) => {
+      if (!cropping) return;
+      e.preventDefault();
+      setCropStart(null);
+    },
+    [cropping]
+  );
 
   const handleSave = useCallback(async () => {
     const img = imgRef.current;
@@ -194,7 +242,7 @@ export function ImageEditor({ photo, onClose }: ImageEditorProps) {
   }, [rotation, flipH, flipV, cropRect, photo, updatePhoto, onClose]);
 
   return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-black/95">
+    <div className="fixed inset-0 z-[60] flex flex-col bg-black/95" role="dialog" aria-modal="true" aria-label={`Edit photo: ${photo.name}`}>
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 py-2 bg-black/80">
         <div className="flex items-center gap-2">
@@ -214,36 +262,36 @@ export function ImageEditor({ photo, onClose }: ImageEditorProps) {
             size="icon"
             className="text-white/80 hover:text-white hover:bg-white/10"
             onClick={() => setRotation((r) => r - 90)}
-            title="Rotate CCW"
+            aria-label="Rotate counter-clockwise"
           >
-            <RotateCcw className="h-4 w-4" />
+            <RotateCcw className="h-4 w-4" aria-hidden="true" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             className="text-white/80 hover:text-white hover:bg-white/10"
             onClick={() => setRotation((r) => r + 90)}
-            title="Rotate CW"
+            aria-label="Rotate clockwise"
           >
-            <RotateCw className="h-4 w-4" />
+            <RotateCw className="h-4 w-4" aria-hidden="true" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             className="text-white/80 hover:text-white hover:bg-white/10"
             onClick={() => setFlipH((f) => !f)}
-            title="Flip horizontal"
+            aria-label="Flip horizontal"
           >
-            <FlipHorizontal className="h-4 w-4" />
+            <FlipHorizontal className="h-4 w-4" aria-hidden="true" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             className="text-white/80 hover:text-white hover:bg-white/10"
             onClick={() => setFlipV((f) => !f)}
-            title="Flip vertical"
+            aria-label="Flip vertical"
           >
-            <FlipVertical className="h-4 w-4" />
+            <FlipVertical className="h-4 w-4" aria-hidden="true" />
           </Button>
           <div className="w-px h-5 bg-white/20 mx-1" />
           <Button
@@ -251,8 +299,9 @@ export function ImageEditor({ photo, onClose }: ImageEditorProps) {
             size="icon"
             className="text-white/80 hover:text-white hover:bg-white/10"
             onClick={onClose}
+            aria-label="Close editor"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </Button>
         </div>
       </div>
@@ -288,11 +337,14 @@ export function ImageEditor({ photo, onClose }: ImageEditorProps) {
           onMouseDown={handleCanvasMouseDown}
           onMouseMove={handleCanvasMouseMove}
           onMouseUp={handleCanvasMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         />
       </div>
 
       {/* Save bar */}
-      <div className="flex items-center justify-end gap-2 px-4 py-3 bg-black/80">
+      <div className="flex items-center justify-end gap-2 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-black/80">
         <Button variant="outline" onClick={onClose} className="border-zinc-700">
           Cancel
         </Button>

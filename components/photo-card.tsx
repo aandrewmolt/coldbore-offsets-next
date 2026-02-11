@@ -136,7 +136,11 @@ export function PhotoCard({ photo }: PhotoCardProps) {
       <div className="relative">
         <div
           className="aspect-[4/3] cursor-pointer overflow-hidden"
+          role="button"
+          tabIndex={0}
+          aria-label={`View ${photo.name}`}
           onClick={handleImageClick}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleImageClick(); } }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -147,14 +151,17 @@ export function PhotoCard({ photo }: PhotoCardProps) {
         </div>
 
         {/* Selection checkbox overlay */}
-        <div className="absolute top-2 left-2 z-10">
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onClick={handleCheckboxClick}
-            onChange={() => {}}
-            className="size-4 cursor-pointer rounded border-white/60 bg-black/40 accent-blue-500"
-          />
+        <div className="absolute top-1 left-1 z-10">
+          <label className="flex size-11 cursor-pointer items-center justify-center">
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onClick={handleCheckboxClick}
+              onChange={() => {}}
+              className="size-5 cursor-pointer rounded border-white/60 bg-black/40 accent-blue-500"
+              aria-label={`Select photo ${photo.name}`}
+            />
+          </label>
         </div>
 
         {/* Lag badge */}
@@ -173,7 +180,10 @@ export function PhotoCard({ photo }: PhotoCardProps) {
           <p
             className="truncate text-sm font-medium cursor-pointer hover:text-primary"
             title={photo.name}
+            role="button"
+            tabIndex={0}
             onClick={() => setDetailsOpen(true)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDetailsOpen(true); } }}
           >
             {photo.name}
           </p>
@@ -252,20 +262,20 @@ export function PhotoCard({ photo }: PhotoCardProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 p-0"
+            className="h-7 w-7 p-0 min-h-[44px] min-w-[44px]"
             onClick={handleImageClick}
-            title="View photo"
+            aria-label={`View ${photo.name}`}
           >
-            <Eye className="size-3.5" />
+            <Eye className="size-3.5" aria-hidden="true" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 p-0"
+            className="h-7 w-7 p-0 min-h-[44px] min-w-[44px]"
             onClick={handleDownload}
-            title="Download photo"
+            aria-label={`Download ${photo.name}`}
           >
-            <Download className="size-3.5" />
+            <Download className="size-3.5" aria-hidden="true" />
           </Button>
 
           <AlertDialog>
@@ -273,10 +283,10 @@ export function PhotoCard({ photo }: PhotoCardProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                title="Delete photo"
+                className="h-7 w-7 p-0 min-h-[44px] min-w-[44px] text-destructive hover:text-destructive"
+                aria-label={`Delete ${photo.name}`}
               >
-                <Trash2 className="size-3.5" />
+                <Trash2 className="size-3.5" aria-hidden="true" />
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>

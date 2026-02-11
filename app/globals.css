@@ -64,7 +64,7 @@
   --secondary: #2C3E50;
   --secondary-foreground: #ededed;
   --muted: #2a2a2a;
-  --muted-foreground: #999;
+  --muted-foreground: #aaa;
   --accent: #2C3E50;
   --accent-foreground: #ededed;
   --destructive: #E74C3C;
@@ -146,4 +146,16 @@
 .skip-link:focus {
   left: 0;
   top: 0;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

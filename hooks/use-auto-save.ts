@@ -11,6 +11,7 @@ export function useAutoSave() {
   const unsavedChanges = useAppStore((s) => s.unsavedChanges);
   const markSaved = useAppStore((s) => s.markSaved);
   const markSaveFailed = useAppStore((s) => s.markSaveFailed);
+  const clearDirtyPhotos = useAppStore((s) => s.clearDirtyPhotos);
   const { storagePrefix } = useCategories();
   const storeRef = useRef(useAppStore.getState());
   const lastFailedRef = useRef(false);
@@ -29,8 +30,10 @@ export function useAutoSave() {
       const state = storeRef.current;
       if (state.unsavedChanges && state.photos.length > 0) {
         try {
-          const success = await saveToLocalStorage(state, storagePrefix);
+          const dirtyIds = state.dirtyPhotoIds;
+          const success = await saveToLocalStorage(state, storagePrefix, dirtyIds);
           if (success) {
+            clearDirtyPhotos();
             markSaved();
             // Only show toast when recovering from a failure
             if (lastFailedRef.current) {
@@ -55,5 +58,5 @@ export function useAutoSave() {
     }, CONFIG.AUTO_SAVE_INTERVAL);
 
     return () => clearInterval(timer);
-  }, [unsavedChanges, markSaved, markSaveFailed, storagePrefix]);
+  }, [unsavedChanges, markSaved, markSaveFailed, clearDirtyPhotos, storagePrefix]);
 }

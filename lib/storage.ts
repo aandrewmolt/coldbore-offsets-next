@@ -54,7 +54,8 @@ export async function saveToLocalStorage(
     totalOriginalSize: number;
     totalOptimizedSize: number;
   },
-  prefix?: string
+  prefix?: string,
+  dirtyPhotoIds?: Set<string>
 ): Promise<boolean> {
   try {
     const pfx = getPrefix(prefix);
@@ -74,13 +75,17 @@ export async function saveToLocalStorage(
     const storageKey = `${pfx}current_project`;
     localStorage.setItem(storageKey, JSON.stringify(projectData));
 
-    // Save image binaries to IndexedDB
-    await savePhotoBinaries(
-      data.photos
-        .filter((p) => p.dataUrl || p.jpegUrl)
-        .map((p) => ({ id: p.id, dataUrl: p.dataUrl, jpegUrl: p.jpegUrl })),
-      getDbName(prefix)
-    );
+    // Save image binaries to IndexedDB (only dirty photos if tracking)
+    const photosToSave = dirtyPhotoIds && dirtyPhotoIds.size > 0
+      ? data.photos.filter((p) => dirtyPhotoIds.has(p.id) && (p.dataUrl || p.jpegUrl))
+      : data.photos.filter((p) => p.dataUrl || p.jpegUrl);
+
+    if (photosToSave.length > 0) {
+      await savePhotoBinaries(
+        photosToSave.map((p) => ({ id: p.id, dataUrl: p.dataUrl, jpegUrl: p.jpegUrl })),
+        getDbName(prefix)
+      );
+    }
 
     return true;
   } catch (error) {

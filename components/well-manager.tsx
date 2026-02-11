@@ -249,7 +249,12 @@ export function WellManager() {
                           ? 'bg-amber-600 text-white hover:bg-amber-700'
                           : 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
                       }`}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={isActive}
+                      aria-label={`Filter by well ${well.name} (${count} photos)`}
                       onClick={() => handleFilterByWell(well.name)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleFilterByWell(well.name); } }}
                     >
                       {well.name}
                       <span className="ml-1 opacity-60">({count})</span>
@@ -259,7 +264,7 @@ export function WellManager() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={`h-5 w-5 p-0 ${
+                      className={`h-5 w-5 p-0 min-h-[44px] min-w-[44px] ${
                         expandedWell === well.name
                           ? 'text-amber-500'
                           : 'text-zinc-500 hover:text-zinc-300'
@@ -278,7 +283,7 @@ export function WellManager() {
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <button
-                          className="inline-flex h-5 w-5 items-center justify-center rounded-sm text-zinc-500 transition-colors hover:bg-red-900/30 hover:text-red-400"
+                          className="inline-flex h-5 w-5 min-h-[44px] min-w-[44px] items-center justify-center rounded-sm text-zinc-500 transition-colors hover:bg-red-900/30 hover:text-red-400"
                           aria-label={`Remove well ${well.name}`}
                         >
                           <X className="h-3 w-3" />
