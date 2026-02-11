@@ -1,4 +1,4 @@
-const DB_NAME = 'shearfrac-photos';
+const DEFAULT_DB_NAME = 'shearfrac-photos';
 const DB_VERSION = 1;
 const STORE_NAME = 'photo-binaries';
 
@@ -8,9 +8,9 @@ interface PhotoBinary {
   jpegUrl: string;
 }
 
-function openDB(): Promise<IDBDatabase> {
+function openDB(dbName: string = DEFAULT_DB_NAME): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    const request = indexedDB.open(dbName, DB_VERSION);
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
@@ -23,10 +23,11 @@ function openDB(): Promise<IDBDatabase> {
 }
 
 export async function savePhotoBinaries(
-  photos: Array<{ id: string; dataUrl: string; jpegUrl: string }>
+  photos: Array<{ id: string; dataUrl: string; jpegUrl: string }>,
+  dbName?: string
 ): Promise<void> {
   if (typeof indexedDB === 'undefined') return;
-  const db = await openDB();
+  const db = await openDB(dbName);
   const tx = db.transaction(STORE_NAME, 'readwrite');
   const store = tx.objectStore(STORE_NAME);
   for (const photo of photos) {
@@ -39,11 +40,12 @@ export async function savePhotoBinaries(
 }
 
 export async function loadPhotoBinaries(
-  photoIds: string[]
+  photoIds: string[],
+  dbName?: string
 ): Promise<Map<string, { dataUrl: string; jpegUrl: string }>> {
   const result = new Map<string, { dataUrl: string; jpegUrl: string }>();
   if (typeof indexedDB === 'undefined' || photoIds.length === 0) return result;
-  const db = await openDB();
+  const db = await openDB(dbName);
   const tx = db.transaction(STORE_NAME, 'readonly');
   const store = tx.objectStore(STORE_NAME);
 
@@ -67,9 +69,9 @@ export async function loadPhotoBinaries(
   return result;
 }
 
-export async function deletePhotoBinaries(photoIds: string[]): Promise<void> {
+export async function deletePhotoBinaries(photoIds: string[], dbName?: string): Promise<void> {
   if (typeof indexedDB === 'undefined' || photoIds.length === 0) return;
-  const db = await openDB();
+  const db = await openDB(dbName);
   const tx = db.transaction(STORE_NAME, 'readwrite');
   const store = tx.objectStore(STORE_NAME);
   for (const id of photoIds) {
@@ -81,9 +83,9 @@ export async function deletePhotoBinaries(photoIds: string[]): Promise<void> {
   });
 }
 
-export async function clearAllPhotoBinaries(): Promise<void> {
+export async function clearAllPhotoBinaries(dbName?: string): Promise<void> {
   if (typeof indexedDB === 'undefined') return;
-  const db = await openDB();
+  const db = await openDB(dbName);
   const tx = db.transaction(STORE_NAME, 'readwrite');
   tx.objectStore(STORE_NAME).clear();
   return new Promise((resolve, reject) => {

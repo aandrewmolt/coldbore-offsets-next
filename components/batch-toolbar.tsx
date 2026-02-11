@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useAppStore } from '@/lib/store';
-import { CONFIG } from '@/lib/config';
+import { useCategories } from '@/lib/category-context';
 import { Layers, Tag, Trash2, X, Pencil } from 'lucide-react';
 import { BulkRenameModal } from '@/components/modals/bulk-rename-modal';
 
@@ -39,6 +39,7 @@ export function BatchToolbar() {
   const batchAssignCategory = useAppStore((s) => s.batchAssignCategory);
   const batchDelete = useAppStore((s) => s.batchDelete);
   const clearSelection = useAppStore((s) => s.clearSelection);
+  const { categories } = useCategories();
 
   const [wellDialogOpen, setWellDialogOpen] = useState(false);
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
@@ -127,7 +128,7 @@ export function BatchToolbar() {
               <SelectValue placeholder="Select category..." />
             </SelectTrigger>
             <SelectContent>
-              {CONFIG.PHOTO_CATEGORIES.filter((c) => c.value).map((c) => (
+              {categories.filter((c) => c.value).map((c) => (
                 <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
               ))}
             </SelectContent>

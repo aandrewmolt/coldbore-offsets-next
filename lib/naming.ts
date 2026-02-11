@@ -11,6 +11,20 @@ export const CATEGORY_ABBREV: Record<string, string> = {
   '': 'UNC',
 };
 
+export const RIGUP_CATEGORY_ABBREV: Record<string, string> = {
+  pressure_gauge: 'PRG',
+  well_fullview: 'WFV',
+  all_wells: 'ALW',
+  box_install: 'BOX',
+  starlink: 'STR',
+  reels: 'REL',
+  wellside: 'WSD',
+  pad_overview: 'POV',
+  pumps: 'PMP',
+  other: 'OTH',
+  '': 'UNC',
+};
+
 export function generateSmartName(
   file: File,
   client: string,
@@ -33,12 +47,14 @@ export function generatePhotoName(
   well: string,
   category: string,
   captureDateTime: Date | string,
-  photoIndex: number
+  photoIndex: number,
+  categoryAbbrev?: Record<string, string>
 ): string {
+  const abbrev = categoryAbbrev ?? CATEGORY_ABBREV;
   const clientPrefix = client.substring(0, 3).toUpperCase();
   const jobPrefix = job.substring(0, 3).toUpperCase();
   const wellPrefix = (well || 'UNK').substring(0, 3).toUpperCase();
-  const categoryTag = CATEGORY_ABBREV[category] || 'UNC';
+  const categoryTag = abbrev[category] || 'UNC';
   const date = new Date(captureDateTime);
   const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');
   const photoNum = String(photoIndex).padStart(4, '0');

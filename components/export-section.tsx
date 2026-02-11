@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAppStore } from '@/lib/store';
 import { saveToLocalStorage } from '@/lib/storage';
+import { useCategories } from '@/lib/category-context';
 import { validateExport, ExportIssue } from '@/lib/export-validation';
 import { ExportValidationModal } from '@/components/modals/export-validation-modal';
 import { toast } from 'sonner';
@@ -23,6 +24,7 @@ export function ExportSection({ onOpenProjectModal }: ExportSectionProps) {
   const techName = useAppStore((s) => s.techName);
   const setTechName = useAppStore((s) => s.setTechName);
   const markSaved = useAppStore((s) => s.markSaved);
+  const { storagePrefix, mode, categories } = useCategories();
 
   const [exporting, setExporting] = useState<string | null>(null);
   const [validationIssues, setValidationIssues] = useState<ExportIssue[]>([]);
@@ -35,7 +37,7 @@ export function ExportSection({ onOpenProjectModal }: ExportSectionProps) {
       return;
     }
 
-    const { issues } = validateExport(photos, wells, techName);
+    const { issues } = validateExport(photos, wells, techName, mode);
     if (issues.length > 0) {
       setValidationIssues(issues);
       setPendingExportType(type);
@@ -48,14 +50,15 @@ export function ExportSection({ onOpenProjectModal }: ExportSectionProps) {
 
   async function doExport(type: string) {
     setExporting(type);
+    const exportOptions = { mode, categories };
     try {
       if (type === 'pptx') {
         const { exportPowerPoint } = await import('@/lib/export-pptx');
-        await exportPowerPoint(useAppStore.getState());
+        await exportPowerPoint(useAppStore.getState(), exportOptions);
         toast.success('PowerPoint exported successfully');
       } else if (type === 'zip') {
         const { exportZip } = await import('@/lib/export-zip');
-        await exportZip(useAppStore.getState());
+        await exportZip(useAppStore.getState(), exportOptions);
         toast.success('Complete package exported');
       }
     } catch (err) {
@@ -68,7 +71,7 @@ export function ExportSection({ onOpenProjectModal }: ExportSectionProps) {
 
   async function handleSave() {
     try {
-      const success = await saveToLocalStorage(store);
+      const success = await saveToLocalStorage(store, storagePrefix);
       if (success) {
         markSaved();
         toast.success('Project saved');

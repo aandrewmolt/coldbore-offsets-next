@@ -1,10 +1,10 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X, CheckCircle2, Circle } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { useFilteredPhotos } from '@/hooks/use-photo-filter';
-import { CONFIG } from '@/lib/config';
+import { useCategories } from '@/lib/category-context';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +36,7 @@ export function PhotoSidebar() {
   const clearFilters = useAppStore((s) => s.clearFilters);
   const setSortBy = useAppStore((s) => s.setSortBy);
   const filteredPhotos = useFilteredPhotos();
+  const { categories, mode } = useCategories();
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -63,7 +64,7 @@ export function PhotoSidebar() {
     currentFilter.category !== '';
 
   const getCategoryLabel = (value: string) => {
-    const cat = CONFIG.PHOTO_CATEGORIES.find((c) => c.value === value);
+    const cat = categories.find((c) => c.value === value);
     return cat?.label ?? value;
   };
 
@@ -120,7 +121,7 @@ export function PhotoSidebar() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="__all__">All Categories</SelectItem>
-            {CONFIG.PHOTO_CATEGORIES.filter((c) => c.value !== '').map(
+            {categories.filter((c) => c.value !== '').map(
               (cat) => (
                 <SelectItem key={cat.value} value={cat.value}>
                   {cat.label} ({categoryCounts[cat.value] || 0})
@@ -161,6 +162,42 @@ export function PhotoSidebar() {
           <X className="size-3.5" />
           Clear filters
         </Button>
+      )}
+
+      {/* Category completion checklist */}
+      {photos.length > 0 && (
+        <div className="space-y-1.5 border-t pt-3">
+          <p className="text-xs font-medium text-muted-foreground">
+            {mode === 'rigup' ? 'Photo Checklist' : 'Category Coverage'}
+          </p>
+          <div className="space-y-0.5">
+            {categories.filter((c) => c.value !== '').map((cat) => {
+              const count = categoryCounts[cat.value] || 0;
+              const hasPhotos = count > 0;
+              return (
+                <button
+                  key={cat.value}
+                  onClick={() => setFilter('category', currentFilter.category === cat.value ? '' : cat.value)}
+                  className={`flex w-full items-center gap-1.5 rounded px-1.5 py-0.5 text-left text-xs transition-colors hover:bg-muted/50 ${
+                    currentFilter.category === cat.value ? 'bg-muted' : ''
+                  }`}
+                >
+                  {hasPhotos ? (
+                    <CheckCircle2 className="size-3.5 shrink-0 text-green-500" />
+                  ) : (
+                    <Circle className="size-3.5 shrink-0 text-amber-500" />
+                  )}
+                  <span className={hasPhotos ? 'text-foreground' : 'text-amber-400'}>
+                    {cat.label}
+                  </span>
+                  {count > 0 && (
+                    <span className="ml-auto text-muted-foreground">{count}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* Compact photo list */}

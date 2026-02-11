@@ -5,6 +5,7 @@ import { Eye, Download, Trash2 } from 'lucide-react';
 import { Photo } from '@/lib/types';
 import { CONFIG } from '@/lib/config';
 import { useAppStore } from '@/lib/store';
+import { useCategories } from '@/lib/category-context';
 import { useFilteredPhotos } from '@/hooks/use-photo-filter';
 import { usePhotoDrag } from '@/hooks/use-photo-drag';
 import { Card, CardContent } from '@/components/ui/card';
@@ -56,6 +57,7 @@ export function PhotoCard({ photo }: PhotoCardProps) {
   const removePhoto = useAppStore((s) => s.removePhoto);
   const setViewerPhotoId = useAppStore((s) => s.setViewerPhotoId);
   const filteredPhotos = useFilteredPhotos();
+  const { categories } = useCategories();
 
   const { dragRef, dragHandlers, isCustomSort } = usePhotoDrag(photo.id);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -221,7 +223,7 @@ export function PhotoCard({ photo }: PhotoCardProps) {
               <SelectValue placeholder="Assign category..." />
             </SelectTrigger>
             <SelectContent>
-              {CONFIG.PHOTO_CATEGORIES.map((cat) => (
+              {categories.map((cat) => (
                 <Tooltip key={cat.value || '__none__'}>
                   <TooltipTrigger asChild>
                     <SelectItem value={cat.value || '__none__'}>

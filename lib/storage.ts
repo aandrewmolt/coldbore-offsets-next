@@ -2,6 +2,14 @@ import { CONFIG } from '@/lib/config';
 import { Photo, Well, GPSLocation, SavedProject, ProjectData } from '@/lib/types';
 import { savePhotoBinaries, loadPhotoBinaries, clearAllPhotoBinaries } from '@/lib/indexed-db';
 
+function getPrefix(prefix?: string): string {
+  return prefix ? `shearfrac_${prefix}_` : CONFIG.STORAGE_KEY_PREFIX;
+}
+
+function getDbName(prefix?: string): string {
+  return prefix ? `shearfrac-${prefix}-photos` : 'shearfrac-photos';
+}
+
 function compressPhotosForStorage(photos: Photo[]): Partial<Photo>[] {
   return photos.map((photo) => ({
     id: photo.id,
@@ -37,15 +45,19 @@ function compressPhotosForStorage(photos: Photo[]): Partial<Photo>[] {
   }));
 }
 
-export async function saveToLocalStorage(data: {
-  photos: Photo[];
-  wells: Well[];
-  wellLocations: Record<string, GPSLocation>;
-  projectInfo: { clientName: string; jobName: string; jobDateTime: Date | null; projectNotes: string };
-  totalOriginalSize: number;
-  totalOptimizedSize: number;
-}): Promise<boolean> {
+export async function saveToLocalStorage(
+  data: {
+    photos: Photo[];
+    wells: Well[];
+    wellLocations: Record<string, GPSLocation>;
+    projectInfo: { clientName: string; jobName: string; jobDateTime: Date | null; projectNotes: string };
+    totalOriginalSize: number;
+    totalOptimizedSize: number;
+  },
+  prefix?: string
+): Promise<boolean> {
   try {
+    const pfx = getPrefix(prefix);
     const projectData = {
       version: '2.0',
       client: data.projectInfo.clientName,
@@ -59,14 +71,15 @@ export async function saveToLocalStorage(data: {
       totalOptimizedSize: data.totalOptimizedSize,
       savedAt: new Date().toISOString(),
     };
-    const storageKey = `${CONFIG.STORAGE_KEY_PREFIX}current_project`;
+    const storageKey = `${pfx}current_project`;
     localStorage.setItem(storageKey, JSON.stringify(projectData));
 
     // Save image binaries to IndexedDB
     await savePhotoBinaries(
       data.photos
         .filter((p) => p.dataUrl || p.jpegUrl)
-        .map((p) => ({ id: p.id, dataUrl: p.dataUrl, jpegUrl: p.jpegUrl }))
+        .map((p) => ({ id: p.id, dataUrl: p.dataUrl, jpegUrl: p.jpegUrl })),
+      getDbName(prefix)
     );
 
     return true;
@@ -76,9 +89,10 @@ export async function saveToLocalStorage(data: {
   }
 }
 
-export async function loadFromLocalStorage(): Promise<ProjectData | null> {
+export async function loadFromLocalStorage(prefix?: string): Promise<ProjectData | null> {
   try {
-    const storageKey = `${CONFIG.STORAGE_KEY_PREFIX}current_project`;
+    const pfx = getPrefix(prefix);
+    const storageKey = `${pfx}current_project`;
     const dataString = localStorage.getItem(storageKey);
     if (!dataString) return null;
     const data: ProjectData = JSON.parse(dataString);
@@ -86,7 +100,7 @@ export async function loadFromLocalStorage(): Promise<ProjectData | null> {
     // Reattach image binaries from IndexedDB
     if (data.photos && data.photos.length > 0) {
       const ids = data.photos.map((p) => p.id);
-      const binaries = await loadPhotoBinaries(ids);
+      const binaries = await loadPhotoBinaries(ids, getDbName(prefix));
       data.photos = data.photos.map((photo) => {
         const binary = binaries.get(photo.id);
         if (binary) {
@@ -112,9 +126,11 @@ export async function saveProject(
     projectInfo: { clientName: string; jobName: string; jobDateTime: Date | null; projectNotes: string };
     totalOriginalSize: number;
     totalOptimizedSize: number;
-  }
+  },
+  prefix?: string
 ): Promise<string | null> {
   try {
+    const pfx = getPrefix(prefix);
     const projectId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
     const projectData = {
       id: projectId,
@@ -130,7 +146,7 @@ export async function saveProject(
       totalOptimizedSize: data.totalOptimizedSize,
       savedAt: new Date().toISOString(),
     };
-    const projectsKey = `${CONFIG.STORAGE_KEY_PREFIX}projects`;
+    const projectsKey = `${pfx}projects`;
     const existingProjects: SavedProject[] = JSON.parse(localStorage.getItem(projectsKey) || '[]');
     const existingIndex = existingProjects.findIndex((p) => p.name === name);
     if (existingIndex !== -1) {
@@ -156,13 +172,14 @@ export async function saveProject(
     }
     localStorage.setItem(projectsKey, JSON.stringify(existingProjects));
     const saveId = existingIndex !== -1 ? existingProjects[existingIndex].id : projectId;
-    localStorage.setItem(`${CONFIG.STORAGE_KEY_PREFIX}project_${saveId}`, JSON.stringify(projectData));
+    localStorage.setItem(`${pfx}project_${saveId}`, JSON.stringify(projectData));
 
     // Save binaries to IndexedDB
     await savePhotoBinaries(
       data.photos
         .filter((p) => p.dataUrl || p.jpegUrl)
-        .map((p) => ({ id: p.id, dataUrl: p.dataUrl, jpegUrl: p.jpegUrl }))
+        .map((p) => ({ id: p.id, dataUrl: p.dataUrl, jpegUrl: p.jpegUrl })),
+      getDbName(prefix)
     );
 
     return saveId;
@@ -172,9 +189,10 @@ export async function saveProject(
   }
 }
 
-export async function loadProjectById(projectId: string): Promise<ProjectData | null> {
+export async function loadProjectById(projectId: string, prefix?: string): Promise<ProjectData | null> {
   try {
-    const projectKey = `${CONFIG.STORAGE_KEY_PREFIX}project_${projectId}`;
+    const pfx = getPrefix(prefix);
+    const projectKey = `${pfx}project_${projectId}`;
     const raw = localStorage.getItem(projectKey);
     if (!raw) return null;
     const data: ProjectData = JSON.parse(raw);
@@ -182,7 +200,7 @@ export async function loadProjectById(projectId: string): Promise<ProjectData | 
     // Reattach binaries
     if (data.photos && data.photos.length > 0) {
       const ids = data.photos.map((p) => p.id);
-      const binaries = await loadPhotoBinaries(ids);
+      const binaries = await loadPhotoBinaries(ids, getDbName(prefix));
       data.photos = data.photos.map((photo) => {
         const binary = binaries.get(photo.id);
         if (binary) {
@@ -199,9 +217,10 @@ export async function loadProjectById(projectId: string): Promise<ProjectData | 
   }
 }
 
-export function getSavedProjects(): SavedProject[] {
+export function getSavedProjects(prefix?: string): SavedProject[] {
   try {
-    const projectsKey = `${CONFIG.STORAGE_KEY_PREFIX}projects`;
+    const pfx = getPrefix(prefix);
+    const projectsKey = `${pfx}projects`;
     const projects: SavedProject[] = JSON.parse(localStorage.getItem(projectsKey) || '[]');
     projects.sort((a, b) => new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime());
     return projects;
@@ -210,12 +229,13 @@ export function getSavedProjects(): SavedProject[] {
   }
 }
 
-export function deleteProject(projectId: string): boolean {
+export function deleteProject(projectId: string, prefix?: string): boolean {
   try {
-    const projectsKey = `${CONFIG.STORAGE_KEY_PREFIX}projects`;
+    const pfx = getPrefix(prefix);
+    const projectsKey = `${pfx}projects`;
     const projects: SavedProject[] = JSON.parse(localStorage.getItem(projectsKey) || '[]');
     localStorage.setItem(projectsKey, JSON.stringify(projects.filter((p) => p.id !== projectId)));
-    localStorage.removeItem(`${CONFIG.STORAGE_KEY_PREFIX}project_${projectId}`);
+    localStorage.removeItem(`${pfx}project_${projectId}`);
     return true;
   } catch {
     return false;
@@ -259,8 +279,9 @@ export function getStorageUsage(): { used: number; usedMB: string; percentUsed: 
   };
 }
 
-export async function clearAllStorage(): Promise<void> {
-  const keys = Object.keys(localStorage).filter((key) => key.startsWith(CONFIG.STORAGE_KEY_PREFIX));
+export async function clearAllStorage(prefix?: string): Promise<void> {
+  const pfx = getPrefix(prefix);
+  const keys = Object.keys(localStorage).filter((key) => key.startsWith(pfx));
   keys.forEach((key) => localStorage.removeItem(key));
-  await clearAllPhotoBinaries();
+  await clearAllPhotoBinaries(getDbName(prefix));
 }

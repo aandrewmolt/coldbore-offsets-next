@@ -29,6 +29,20 @@ export const CONFIG = {
   VALID_IMAGE_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.gif', '.webp'],
 } as const;
 
+export const RIGUP_CATEGORIES: CategoryDefinition[] = [
+  { value: '', label: 'Unassigned', description: 'Photo has not been categorized yet' },
+  { value: 'pressure_gauge', label: 'Pressure Gauge', description: 'Close up pressure gauge photo' },
+  { value: 'well_fullview', label: 'Well Full View', description: 'Full view of the well' },
+  { value: 'all_wells', label: 'All Wells', description: 'Photo showing all wells' },
+  { value: 'box_install', label: 'Box Installation', description: 'Box installation inside datavan' },
+  { value: 'starlink', label: 'Starlink', description: 'Starlink equipment' },
+  { value: 'reels', label: 'Reels', description: 'Reels' },
+  { value: 'wellside', label: 'Wellside', description: 'Wellside equipment and setup' },
+  { value: 'pad_overview', label: 'Pad Overview', description: 'Overview of the pad' },
+  { value: 'pumps', label: 'Pumps', description: 'Pump equipment' },
+  { value: 'other', label: 'Other', description: 'Other rig up photos' },
+];
+
 export const RuntimeConfig = {
   debug: false,
   autoSaveEnabled: true,

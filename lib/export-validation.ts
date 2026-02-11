@@ -10,9 +10,11 @@ export interface ExportIssue {
 export function validateExport(
   photos: Photo[],
   wells: Well[],
-  techName: string
+  techName: string,
+  mode: 'offsets' | 'rigup' = 'offsets',
 ): { issues: ExportIssue[] } {
   const issues: ExportIssue[] = [];
+  const isRigup = mode === 'rigup';
 
   // Tech name missing
   if (!techName.trim()) {
@@ -29,7 +31,7 @@ export function validateExport(
   if (noWell.length > 0) {
     issues.push({
       type: 'no-well',
-      severity: 'error',
+      severity: isRigup ? 'warning' : 'error',
       message: `${noWell.length} photo${noWell.length !== 1 ? 's' : ''} without well assignment`,
       affectedPhotoIds: noWell.map((p) => p.id),
     });
@@ -40,7 +42,7 @@ export function validateExport(
   if (noCategory.length > 0) {
     issues.push({
       type: 'no-category',
-      severity: 'error',
+      severity: isRigup ? 'warning' : 'error',
       message: `${noCategory.length} photo${noCategory.length !== 1 ? 's' : ''} without category`,
       affectedPhotoIds: noCategory.map((p) => p.id),
     });

@@ -1,7 +1,7 @@
 // PowerPoint Export Module - Generates professional PPTX presentations
 // Uses pptxgenjs for slide generation with ShearFRAC branding
 
-import { Photo, Well, GPSLocation } from './types';
+import { Photo, Well, GPSLocation, CategoryDefinition } from './types';
 import { CONFIG } from './config';
 import { formatFileSize } from './utils';
 
@@ -22,6 +22,11 @@ export interface AppStoreState {
   techName: string;
   totalOriginalSize: number;
   totalOptimizedSize: number;
+}
+
+export interface ExportOptions {
+  mode: 'offsets' | 'rigup';
+  categories: CategoryDefinition[];
 }
 
 // --------------------------------------------------------------------------
@@ -49,23 +54,39 @@ const COLORS = {
 // Helpers
 // --------------------------------------------------------------------------
 
+const CATEGORY_COLOR_MAP: Record<string, string> = {
+  // Offsets categories
+  casing_fullview: COLORS.BLUE,
+  casing_pressure: COLORS.RED,
+  casing_reference: COLORS.GOLD,
+  tubing_fullview: COLORS.BLUE,
+  tubing_pressure: COLORS.RED,
+  tubing_reference: COLORS.GOLD,
+  overview: COLORS.GREEN,
+  signage: COLORS.MED_GRAY,
+  equipment: COLORS.DARK_BLUE,
+  // Rig Up categories
+  pressure_gauge: COLORS.RED,
+  well_fullview: COLORS.BLUE,
+  all_wells: COLORS.GREEN,
+  box_install: COLORS.DARK_BLUE,
+  starlink: COLORS.GOLD,
+  reels: COLORS.MED_GRAY,
+  wellside: COLORS.BLUE,
+  pad_overview: COLORS.GREEN,
+  pumps: COLORS.DARK_BLUE,
+  other: COLORS.MED_GRAY,
+};
+
 function getCategoryColor(category: string): string {
-  const map: Record<string, string> = {
-    casing_fullview: COLORS.BLUE,
-    casing_pressure: COLORS.RED,
-    casing_reference: COLORS.GOLD,
-    tubing_fullview: COLORS.BLUE,
-    tubing_pressure: COLORS.RED,
-    tubing_reference: COLORS.GOLD,
-    overview: COLORS.GREEN,
-    signage: COLORS.MED_GRAY,
-    equipment: COLORS.DARK_BLUE,
-  };
-  return map[category] || COLORS.RED;
+  return CATEGORY_COLOR_MAP[category] || COLORS.RED;
 }
 
+// Module-level categories ref set by generatePptxBlob before slides are built
+let _categories: CategoryDefinition[] = CONFIG.PHOTO_CATEGORIES as unknown as CategoryDefinition[];
+
 function getCategoryLabel(category: string): string {
-  const def = CONFIG.PHOTO_CATEGORIES.find((c) => c.value === category);
+  const def = _categories.find((c) => c.value === category);
   return def ? def.label : (category || 'Unassigned');
 }
 
@@ -138,6 +159,9 @@ type Pptx = any;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Slide = any;
 
+// Module-level mode ref set by generatePptxBlob
+let _mode: 'offsets' | 'rigup' = 'offsets';
+
 function addTitleSlide(pptx: Pptx, state: AppStoreState): void {
   const { projectInfo, techName, photos } = state;
   const client = projectInfo.clientName || 'Client';
@@ -151,7 +175,8 @@ function addTitleSlide(pptx: Pptx, state: AppStoreState): void {
   slide.addShape('rect', { x: 0, y: 5.2, w: 10, h: 0.05, fill: { color: COLORS.GOLD } });
 
   // Main title
-  slide.addText('OFFSET PHOTO', {
+  const titleLine1 = _mode === 'rigup' ? 'RIG UP PHOTO' : 'OFFSET PHOTO';
+  slide.addText(titleLine1, {
     x: 0.5, y: 1.2, w: 9, h: 0.8,
     fontSize: 44, bold: true, color: COLORS.GOLD,
     align: 'center', fontFace: 'Arial Black',
@@ -193,9 +218,9 @@ function addTitleSlide(pptx: Pptx, state: AppStoreState): void {
     });
   }
 
-  // Branding
+  // Branding - positioned above bottom gold bar (bar is at y=5.2)
   slide.addText('ShearFRAC', {
-    x: 0.5, y: 5.05, w: 9, h: 0.25,
+    x: 0.5, y: 4.85, w: 9, h: 0.25,
     fontSize: 12, color: COLORS.GOLD, align: 'center', italic: true,
   });
 
@@ -241,22 +266,28 @@ function addTableOfContents(
       return catA.localeCompare(catB);
     });
 
-    // Determine which photos go to OPS slides vs regular
+    // Determine which photos go to OPS slides vs regular (offsets only)
+    const isOffsets = _mode === 'offsets';
     const opsIds = new Set<string>();
-    const casingPressure = sortedPhotos.find((p) => p.category === 'casing_pressure');
-    const casingReference = sortedPhotos.find((p) => p.category === 'casing_reference');
-    const tubingPressure = sortedPhotos.find((p) => p.category === 'tubing_pressure');
-    const tubingReference = sortedPhotos.find((p) => p.category === 'tubing_reference');
-    if (casingPressure) opsIds.add(casingPressure.id);
-    if (casingReference) opsIds.add(casingReference.id);
-    if (tubingPressure) opsIds.add(tubingPressure.id);
-    if (tubingReference) opsIds.add(tubingReference.id);
+    if (isOffsets) {
+      const casingPressure = sortedPhotos.find((p) => p.category === 'casing_pressure');
+      const casingReference = sortedPhotos.find((p) => p.category === 'casing_reference');
+      const tubingPressure = sortedPhotos.find((p) => p.category === 'tubing_pressure');
+      const tubingReference = sortedPhotos.find((p) => p.category === 'tubing_reference');
+      if (casingPressure) opsIds.add(casingPressure.id);
+      if (casingReference) opsIds.add(casingReference.id);
+      if (tubingPressure) opsIds.add(tubingPressure.id);
+      if (tubingReference) opsIds.add(tubingReference.id);
+    }
 
     const regularPhotos = sortedPhotos.filter((p) => !opsIds.has(p.id));
     const regularSlides = Math.ceil(regularPhotos.length / photosPerSlide);
-    const hasCasingOps = !!(casingPressure || casingReference);
-    const hasTubingOps = !!(tubingPressure || tubingReference);
-    const opsSlideCount = (hasCasingOps ? 1 : 0) + (hasTubingOps ? 1 : 0);
+    let opsSlideCount = 0;
+    if (isOffsets) {
+      const hasCasingOps = sortedPhotos.some((p) => p.category === 'casing_pressure' || p.category === 'casing_reference');
+      const hasTubingOps = sortedPhotos.some((p) => p.category === 'tubing_pressure' || p.category === 'tubing_reference');
+      opsSlideCount = (hasCasingOps ? 1 : 0) + (hasTubingOps ? 1 : 0);
+    }
 
     // Category slide mapping
     const categorySlides: Record<string, number> = {};
@@ -362,18 +393,18 @@ function addTableOfContents(
       displayCats.forEach((cat, catIdx) => {
         const slideNum = entry.categorySlides[cat] || entry.startSlide;
         tocSlide!.addText(getCategoryLabel(cat), {
-          x: catX, y: tocY + 0.25, w: 1.2, h: 0.2,
-          fontSize: 9, color: COLORS.BLUE,
+          x: catX, y: tocY + 0.25, w: 1.4, h: 0.2,
+          fontSize: 9, color: COLORS.BLUE, shrinkText: true,
           underline: { style: 'single', color: COLORS.BLUE },
           hyperlink: { slide: slideNum, tooltip: `Go to ${cat} photos for ${entry.name}` },
         });
-        catX += 1.2;
+        catX += 1.4;
         if (catIdx < displayCats.length - 1) {
           tocSlide!.addText(' \u2022 ', {
-            x: catX, y: tocY + 0.25, w: 0.2, h: 0.2,
+            x: catX, y: tocY + 0.25, w: 0.15, h: 0.2,
             fontSize: 9, color: COLORS.MED_GRAY,
           });
-          catX += 0.2;
+          catX += 0.15;
         }
       });
 
@@ -506,16 +537,16 @@ function addSummarySlide(pptx: Pptx, state: AppStoreState): void {
   // Project notes
   if (notes) {
     slide.addShape('rect', {
-      x: 1, y: 4, w: 8, h: 1.5,
+      x: 1, y: 4, w: 8, h: 1.1,
       fill: { color: COLORS.CHARCOAL, transparency: 30 },
       line: { color: COLORS.GOLD, width: 1 },
     });
     slide.addText('PROJECT NOTES', {
-      x: 1, y: 4.1, w: 8, h: 0.3,
+      x: 1, y: 4.05, w: 8, h: 0.25,
       fontSize: 12, bold: true, color: COLORS.GOLD, align: 'center',
     });
     slide.addText(truncate(notes, 200), {
-      x: 1.3, y: 4.5, w: 7.4, h: 0.9,
+      x: 1.3, y: 4.35, w: 7.4, h: 0.65,
       fontSize: 10, color: COLORS.WHITE, align: 'left', shrinkText: true, wrap: true,
     });
   }
@@ -536,11 +567,12 @@ function addPhotoSlides(
       return catA.localeCompare(catB);
     });
 
-    // Determine OPS photos
-    const casingPressure = sortedPhotos.find((p) => p.category === 'casing_pressure');
-    const casingReference = sortedPhotos.find((p) => p.category === 'casing_reference');
-    const tubingPressure = sortedPhotos.find((p) => p.category === 'tubing_pressure');
-    const tubingReference = sortedPhotos.find((p) => p.category === 'tubing_reference');
+    // Determine OPS photos (only for offsets mode)
+    const isOffsets = _mode === 'offsets';
+    const casingPressure = isOffsets ? sortedPhotos.find((p) => p.category === 'casing_pressure') : undefined;
+    const casingReference = isOffsets ? sortedPhotos.find((p) => p.category === 'casing_reference') : undefined;
+    const tubingPressure = isOffsets ? sortedPhotos.find((p) => p.category === 'tubing_pressure') : undefined;
+    const tubingReference = isOffsets ? sortedPhotos.find((p) => p.category === 'tubing_reference') : undefined;
 
     const opsIds = new Set<string>();
     if (casingPressure) opsIds.add(casingPressure.id);
@@ -599,14 +631,14 @@ function addPhotoSlides(
       });
     }
 
-    // OPS Slides - Casing
-    if (casingPressure || casingReference) {
-      addOpsSlide(pptx, group.well.name, 'CASING', casingPressure || null, casingReference || null);
-    }
-
-    // OPS Slides - Tubing
-    if (tubingPressure || tubingReference) {
-      addOpsSlide(pptx, group.well.name, 'TUBING', tubingPressure || null, tubingReference || null);
+    // OPS Slides - only for offsets mode
+    if (isOffsets) {
+      if (casingPressure || casingReference) {
+        addOpsSlide(pptx, group.well.name, 'CASING', casingPressure || null, casingReference || null);
+      }
+      if (tubingPressure || tubingReference) {
+        addOpsSlide(pptx, group.well.name, 'TUBING', tubingPressure || null, tubingReference || null);
+      }
     }
   }
 }
@@ -899,17 +931,22 @@ function addClosingSlide(pptx: Pptx, techName: string): void {
  * Generate the PPTX as a Blob without triggering a download.
  * Shared by exportPowerPoint (download) and exportZip (embed in ZIP).
  */
-export async function generatePptxBlob(state: AppStoreState): Promise<Blob> {
+export async function generatePptxBlob(state: AppStoreState, options?: ExportOptions): Promise<Blob> {
+  // Set module-level refs for helpers
+  _mode = options?.mode ?? 'offsets';
+  _categories = options?.categories ?? CONFIG.PHOTO_CATEGORIES as unknown as CategoryDefinition[];
+
   const PptxGenJS = (await import('pptxgenjs')).default;
 
   const client = state.projectInfo.clientName || 'Client';
   const job = state.projectInfo.jobName || 'Job';
+  const modeLabel = _mode === 'rigup' ? 'Rig Up' : 'Offset';
 
   const pptx = new PptxGenJS();
   pptx.author = 'ShearFRAC';
   pptx.company = client;
   pptx.subject = job;
-  pptx.title = `${client} - ${job} Offset Photo Documentation`;
+  pptx.title = `${client} - ${job} ${modeLabel} Photo Documentation`;
 
   const wellGroups = groupPhotosByWell(state.photos, state.wells);
 
@@ -940,8 +977,8 @@ export async function generatePptxBlob(state: AppStoreState): Promise<Blob> {
 /**
  * Generate and download the PowerPoint presentation.
  */
-export async function exportPowerPoint(state: AppStoreState): Promise<void> {
-  const blob = await generatePptxBlob(state);
+export async function exportPowerPoint(state: AppStoreState, options?: ExportOptions): Promise<void> {
+  const blob = await generatePptxBlob(state, options);
 
   const client = sanitizeFilename(state.projectInfo.clientName || 'Client');
   const job = sanitizeFilename(state.projectInfo.jobName || 'Job');

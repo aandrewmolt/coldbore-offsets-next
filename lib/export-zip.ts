@@ -1,10 +1,10 @@
 // ZIP Export Module - Bundles PPTX + project info into a downloadable ZIP
 // Uses JSZip for archive creation and file-saver for download trigger
 
-import { Photo, Well, GPSLocation } from './types';
+import { Photo, Well, GPSLocation, CategoryDefinition } from './types';
 import { CONFIG } from './config';
 import { formatFileSize } from './utils';
-import { generatePptxBlob, AppStoreState } from './export-pptx';
+import { generatePptxBlob, AppStoreState, ExportOptions } from './export-pptx';
 
 // --------------------------------------------------------------------------
 // Helpers
@@ -14,12 +14,13 @@ function sanitizeFilename(str: string): string {
   return str.replace(/[^a-z0-9]/gi, '_');
 }
 
-function getCategoryLabel(category: string): string {
-  const def = CONFIG.PHOTO_CATEGORIES.find((c) => c.value === category);
+function getCategoryLabel(category: string, categories?: CategoryDefinition[]): string {
+  const cats = categories ?? CONFIG.PHOTO_CATEGORIES;
+  const def = cats.find((c: CategoryDefinition) => c.value === category);
   return def ? def.label : (category || 'Unassigned');
 }
 
-function buildProjectInfoText(state: AppStoreState, pptxFilename: string): string {
+function buildProjectInfoText(state: AppStoreState, pptxFilename: string, categories?: CategoryDefinition[]): string {
   const {
     photos, wells, wellLocations, projectInfo, techName,
     totalOriginalSize, totalOptimizedSize,
@@ -54,7 +55,7 @@ function buildProjectInfoText(state: AppStoreState, pptxFilename: string): strin
 
   const categoryLines = Object.entries(categoryCounts)
     .sort(([, a], [, b]) => b - a)
-    .map(([cat, count]) => `  - ${getCategoryLabel(cat)}: ${count}`);
+    .map(([cat, count]) => `  - ${getCategoryLabel(cat, categories)}: ${count}`);
 
   const dateStr = projectInfo.jobDateTime
     ? new Date(projectInfo.jobDateTime).toLocaleString()
@@ -109,7 +110,7 @@ function buildProjectInfoText(state: AppStoreState, pptxFilename: string): strin
  *   2. A PROJECT_INFO.txt summary
  * Then trigger a browser download.
  */
-export async function exportZip(state: AppStoreState): Promise<void> {
+export async function exportZip(state: AppStoreState, options?: ExportOptions): Promise<void> {
   const JSZip = (await import('jszip')).default;
   const { saveAs } = await import('file-saver');
 
@@ -118,10 +119,10 @@ export async function exportZip(state: AppStoreState): Promise<void> {
 
   // Generate PPTX blob
   const pptxFilename = `${client}_${job}_ShearFRAC_Report.pptx`;
-  const pptxBlob = await generatePptxBlob(state);
+  const pptxBlob = await generatePptxBlob(state, options);
 
   // Build project info text
-  const projectInfoText = buildProjectInfoText(state, pptxFilename);
+  const projectInfoText = buildProjectInfoText(state, pptxFilename, options?.categories);
 
   // Create ZIP
   const zip = new JSZip();

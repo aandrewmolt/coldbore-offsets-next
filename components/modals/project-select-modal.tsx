@@ -23,6 +23,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAppStore } from '@/lib/store';
 import { getSavedProjects, loadProjectById, deleteProject, loadFromLocalStorage } from '@/lib/storage';
+import { useCategories } from '@/lib/category-context';
 import { SavedProject } from '@/lib/types';
 import { toast } from 'sonner';
 import { FolderOpen, Trash2, Clock, Camera, Layers } from 'lucide-react';
@@ -36,21 +37,22 @@ export function ProjectSelectModal({ open, onOpenChange }: ProjectSelectModalPro
   const [projects, setProjects] = useState<SavedProject[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [hasLastSession, setHasLastSession] = useState(false);
+  const { storagePrefix } = useCategories();
   const hydrate = useAppStore((s) => s.hydrate);
   const reset = useAppStore((s) => s.reset);
   const setProjectInfo = useAppStore((s) => s.setProjectInfo);
 
   useEffect(() => {
     if (open) {
-      setProjects(getSavedProjects());
-      loadFromLocalStorage().then((lastSession) => {
+      setProjects(getSavedProjects(storagePrefix));
+      loadFromLocalStorage(storagePrefix).then((lastSession) => {
         setHasLastSession(!!lastSession);
       });
     }
-  }, [open]);
+  }, [open, storagePrefix]);
 
   async function handleLoadProject(projectId: string) {
-    const data = await loadProjectById(projectId);
+    const data = await loadProjectById(projectId, storagePrefix);
     if (!data) {
       toast.error('Failed to load project');
       return;
@@ -74,7 +76,7 @@ export function ProjectSelectModal({ open, onOpenChange }: ProjectSelectModalPro
   }
 
   async function handleContinueLastSession() {
-    const data = await loadFromLocalStorage();
+    const data = await loadFromLocalStorage(storagePrefix);
     if (!data) {
       toast.error('No saved session found');
       return;
@@ -98,8 +100,8 @@ export function ProjectSelectModal({ open, onOpenChange }: ProjectSelectModalPro
   }
 
   function handleDeleteProject(projectId: string) {
-    deleteProject(projectId);
-    setProjects(getSavedProjects());
+    deleteProject(projectId, storagePrefix);
+    setProjects(getSavedProjects(storagePrefix));
     setDeleteTarget(null);
     toast.success('Project deleted');
   }

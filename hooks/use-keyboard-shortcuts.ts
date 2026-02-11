@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useAppStore } from '@/lib/store';
 import { saveToLocalStorage } from '@/lib/storage';
+import { useCategories } from '@/lib/category-context';
 import { toast } from 'sonner';
 
 export function useKeyboardShortcuts(callbacks: {
@@ -10,6 +11,7 @@ export function useKeyboardShortcuts(callbacks: {
   openProjectModal: () => void;
 }) {
   const store = useAppStore();
+  const { storagePrefix } = useCategories();
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -26,7 +28,7 @@ export function useKeyboardShortcuts(callbacks: {
         switch (e.key.toLowerCase()) {
           case 's':
             e.preventDefault();
-            saveToLocalStorage(store).then((success) => {
+            saveToLocalStorage(store, storagePrefix).then((success) => {
               if (success) toast.success('Project saved');
               else toast.error('Save failed');
             });
@@ -52,5 +54,5 @@ export function useKeyboardShortcuts(callbacks: {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [store, callbacks]);
+  }, [store, callbacks, storagePrefix]);
 }
