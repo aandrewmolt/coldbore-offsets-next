@@ -8,6 +8,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { useCategories } from '@/lib/category-context';
 
 interface InstructionsModalProps {
   open: boolean;
@@ -15,13 +16,21 @@ interface InstructionsModalProps {
 }
 
 export function InstructionsModal({ open, onOpenChange }: InstructionsModalProps) {
+  const { categories, mode } = useCategories();
+
+  const isRigup = mode === 'rigup';
+  const title = isRigup ? 'Rig Up Photos' : 'Offset Photos';
+  const description = isRigup
+    ? 'Equipment setup, pad overview, and rig-up documentation'
+    : 'Casing & tubing pressure photos, well overviews, signage';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-primary">ShearFRAC Instructions</DialogTitle>
+          <DialogTitle className="text-primary">ShearFRAC Instructions — {title}</DialogTitle>
           <DialogDescription>
-            Field photo management for oil and gas operations
+            {description}
           </DialogDescription>
         </DialogHeader>
 
@@ -42,15 +51,13 @@ export function InstructionsModal({ open, onOpenChange }: InstructionsModalProps
           <section>
             <h3 className="mb-1 font-semibold text-foreground">Photo Categories</h3>
             <ul className="list-inside list-disc space-y-1">
-              <li><strong>Casing - Full View:</strong> Complete casing setup and rigging</li>
-              <li><strong>Casing - Pressure:</strong> Digital/actual pressure reading on casing gauge</li>
-              <li><strong>Casing - Reference:</strong> Manual/reference gauge reading for casing baseline</li>
-              <li><strong>Tubing - Full View:</strong> Complete tubing setup and rigging</li>
-              <li><strong>Tubing - Pressure:</strong> Digital/actual pressure reading on tubing gauge</li>
-              <li><strong>Tubing - Reference:</strong> Manual/reference gauge reading for tubing baseline</li>
-              <li><strong>Overview:</strong> General site or well overview</li>
-              <li><strong>Signage:</strong> Well identification signs and markers</li>
-              <li><strong>Equipment:</strong> Tools and equipment used on site</li>
+              {categories
+                .filter((c) => c.value !== '')
+                .map((cat) => (
+                  <li key={cat.value}>
+                    <strong>{cat.label}:</strong> {cat.description}
+                  </li>
+                ))}
             </ul>
           </section>
 
